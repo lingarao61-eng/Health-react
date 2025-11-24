@@ -2,11 +2,45 @@ import { useEffect, useState } from "react";
 import StatisticsChart from "../../components/ecommerce/StatisticsChart";
 import PageMeta from "../../components/common/PageMeta";
 
+// ===========================
+// TYPES
+// ===========================
+interface IotRecord {
+  id: string;
+  user_id: number;
+  Patient_Name: string;
+  Email: string;
+  Age: number;
+  heart_rate: number;
+  respiratory_rate: number;
+  body_temperature: number;
+  oxygen_saturation: number;
+  systolic_bp: number;
+  diastolic_bp: number;
+  risk_label: string;
+  alert_message: string;
+  recommended_action: string;
+  monitoring_suggestion: string;
+  escalation_advice: string;
+  timestamp: number;
+}
+
+interface FormState {
+  user_id: string;
+  Patient_Name: string;
+  Email: string;
+  Age: string;
+  heart_rate: string;
+  respiratory_rate: string;
+  body_temperature: string;
+  oxygen_saturation: string;
+  systolic_bp: string;
+  diastolic_bp: string;
+}
+
 export default function Home() {
-  // ============================
   // FORM STATE
-  // ============================
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormState>({
     user_id: "",
     Patient_Name: "",
     Email: "",
@@ -19,21 +53,21 @@ export default function Home() {
     diastolic_bp: "",
   });
 
-  const [statusMsg, setStatusMsg] = useState("");
-  const [iotData, setIotData] = useState([]);
+  const [statusMsg, setStatusMsg] = useState<string>("");
+  const [iotData, setIotData] = useState<IotRecord[]>([]);
 
-  // FORM HANDLER
-  const handleChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+  // HANDLE INPUT CHANGE
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ============================
-  // POST DATA → XANO
-  // ============================
-  const handleSubmit = async (e) => {
+  // ==========================================================
+  // POST → XANO (FIXED TYPE)
+  // ==========================================================
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
     e.preventDefault();
     setStatusMsg("Submitting...");
 
@@ -51,7 +85,7 @@ export default function Home() {
     };
 
     try {
-      const res = await fetch(
+      await fetch(
         "https://x8ki-letl-twmt.n7.xano.io/api:5GbqGlNW/iot/ingest_record",
         {
           method: "POST",
@@ -60,9 +94,9 @@ export default function Home() {
         }
       );
 
-      await res.json();
       setStatusMsg("Record saved successfully ✔");
 
+      // RESET FORM
       setFormData({
         user_id: "",
         Patient_Name: "",
@@ -83,10 +117,10 @@ export default function Home() {
     }
   };
 
-  // ============================
+  // ==========================================================
   // GET DATA
-  // ============================
-  const loadIotRecords = async () => {
+  // ==========================================================
+  const loadIotRecords = async (): Promise<void> => {
     try {
       const res = await fetch(
         "https://x8ki-letl-twmt.n7.xano.io/api:5GbqGlNW/iot_record"
@@ -102,19 +136,22 @@ export default function Home() {
     loadIotRecords();
   }, []);
 
-  // ============================
-  // GROUP BY EMAIL
-  // ============================
-  const groupedData = iotData.reduce((groups, row) => {
-    if (!groups[row.Email]) groups[row.Email] = [];
-    groups[row.Email].push(row);
-    return groups;
-  }, {});
+  // ==========================================================
+  // GROUP BY EMAIL (TYPESAFE)
+  // ==========================================================
+  const groupedData: Record<string, IotRecord[]> = iotData.reduce(
+    (groups, row) => {
+      if (!groups[row.Email]) groups[row.Email] = [];
+      groups[row.Email].push(row);
+      return groups;
+    },
+    {} as Record<string, IotRecord[]>
+  );
 
-  // ============================
-  // COLOR MAPPING
-  // ============================
-  const riskColor = (risk) => {
+  // ==========================================================
+  // COLOR CODE FUNCTION
+  // ==========================================================
+  const riskColor = (risk: string): string => {
     switch (risk) {
       case "Normal":
         return "text-green-600 font-bold";
@@ -131,18 +168,23 @@ export default function Home() {
     }
   };
 
+  // ==========================================================
+  // RENDER
+  // ==========================================================
   return (
     <>
       <PageMeta title="React.js IoT Dashboard" description="IoT Monitoring Dashboard with Xano" />
 
       <div className="grid grid-cols-12 gap-4 md:gap-6">
 
-        {/* Chart */}
+        {/* CHART */}
         <div className="col-span-12">
           <StatisticsChart />
         </div>
 
-        {/* ====================== FORM ===================== */}
+        {/* ==========================================================
+            FORM
+        ========================================================== */}
         <div className="col-span-12">
           <div className="p-6 bg-white rounded-lg shadow dark:bg-gray-800">
             <h2 className="mb-4 text-xl font-bold">Manual IoT Data Entry</h2>
@@ -159,13 +201,13 @@ export default function Home() {
                 ["oxygen_saturation", "SpO2 (%)", "number"],
                 ["systolic_bp", "Systolic BP", "number"],
                 ["diastolic_bp", "Diastolic BP", "number"],
-              ].map(([name, label, type]) => (
-                <div key={name}>
+              ].map(([key, label, type]) => (
+                <div key={key}>
                   <label className="block mb-1 font-medium">{label}</label>
                   <input
                     type={type}
-                    name={name}
-                    value={formData[name]}
+                    name={key}
+                    value={formData[key as keyof FormState]}
                     onChange={handleChange}
                     className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700"
                     required
@@ -178,13 +220,13 @@ export default function Home() {
               </button>
             </form>
 
-            {statusMsg && (
-              <p className="mt-4 font-semibold text-green-600">{statusMsg}</p>
-            )}
+            {statusMsg && <p className="mt-4 font-semibold text-green-600">{statusMsg}</p>}
           </div>
         </div>
 
-        {/* ====================== TABLE ===================== */}
+        {/* ==========================================================
+            TABLE
+        ========================================================== */}
         <div className="col-span-12">
           <div className="p-6 bg-white rounded-lg shadow dark:bg-gray-800">
             <h2 className="mb-4 text-xl font-bold">IoT Records (Grouped by Email)</h2>
@@ -192,9 +234,7 @@ export default function Home() {
             <div className="space-y-6">
               {Object.keys(groupedData).map((email) => (
                 <div key={email} className="border rounded-lg">
-                  <div className="p-3 font-bold bg-gray-200 dark:bg-gray-700">
-                    📧 {email}
-                  </div>
+                  <div className="p-3 font-bold bg-gray-200 dark:bg-gray-700">📧 {email}</div>
 
                   <table className="min-w-full text-sm text-left">
                     <thead>

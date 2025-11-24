@@ -1,40 +1,50 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
+import { EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
 
 export default function SignUpForm() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [isChecked, setIsChecked] = useState<boolean>(false);
 
   // ------------------------------
   // FORM STATE
   // ------------------------------
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    fname: string;
+    lname: string;
+    email: string;
+    password: string;
+  }>({
     fname: "",
     lname: "",
     email: "",
     password: "",
   });
 
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState<string>("");
 
   // ------------------------------
-  // HANDLE INPUT CHANGE
+  // HANDLE INPUT
   // ------------------------------
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ): void => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   // ------------------------------
-  // HANDLE SIGNUP (XANO API)
+  // HANDLE SIGNUP XANO API
   // ------------------------------
-  const handleSignup = async (e) => {
+  const handleSignup = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
     e.preventDefault();
 
     if (!isChecked) {
@@ -44,7 +54,7 @@ export default function SignUpForm() {
 
     setMessage("Creating your account...");
 
-    const fullName = formData.fname + " " + formData.lname;
+    const fullName = `${formData.fname} ${formData.lname}`;
 
     try {
       const response = await fetch(
@@ -65,10 +75,9 @@ export default function SignUpForm() {
 
       if (data.authToken) {
         localStorage.setItem("authToken", data.authToken);
-        localStorage.setItem("user_id", data.user_id);
+        localStorage.setItem("user_id", String(data.user_id));
 
         setMessage("Signup successful! Redirecting...");
-
         setTimeout(() => {
           window.location.href = "/";
         }, 1200);
@@ -81,11 +90,12 @@ export default function SignUpForm() {
     }
   };
 
+  // ------------------------------
+  // UI
+  // ------------------------------
   return (
     <div className="flex flex-col flex-1 w-full overflow-y-auto lg:w-1/2 no-scrollbar">
-      <div className="w-full max-w-md mx-auto mb-5 sm:pt-10">
-      
-      </div>
+      <div className="w-full max-w-md mx-auto mb-5 sm:pt-10"></div>
 
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
@@ -99,10 +109,7 @@ export default function SignUpForm() {
           </div>
 
           <div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
-           
-            </div>
-
+            {/* OR divider */}
             <div className="relative py-3 sm:py-5">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
@@ -117,12 +124,11 @@ export default function SignUpForm() {
             {/* SIGNUP FORM */}
             <form onSubmit={handleSignup}>
               <div className="space-y-5">
-
                 {/* First + Last Name */}
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                  <div className="sm:col-span-1">
+                  <div>
                     <Label>
-                      First Name<span className="text-error-500">*</span>
+                      First Name <span className="text-error-500">*</span>
                     </Label>
                     <Input
                       type="text"
@@ -131,13 +137,12 @@ export default function SignUpForm() {
                       value={formData.fname}
                       onChange={handleChange}
                       placeholder="Enter your first name"
-                      required
                     />
                   </div>
 
-                  <div className="sm:col-span-1">
+                  <div>
                     <Label>
-                      Last Name<span className="text-error-500">*</span>
+                      Last Name <span className="text-error-500">*</span>
                     </Label>
                     <Input
                       type="text"
@@ -146,7 +151,6 @@ export default function SignUpForm() {
                       value={formData.lname}
                       onChange={handleChange}
                       placeholder="Enter your last name"
-                      required
                     />
                   </div>
                 </div>
@@ -154,7 +158,7 @@ export default function SignUpForm() {
                 {/* Email */}
                 <div>
                   <Label>
-                    Email<span className="text-error-500">*</span>
+                    Email <span className="text-error-500">*</span>
                   </Label>
                   <Input
                     type="email"
@@ -163,14 +167,13 @@ export default function SignUpForm() {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="Enter your email"
-                    required
                   />
                 </div>
 
                 {/* Password */}
                 <div>
                   <Label>
-                    Password<span className="text-error-500">*</span>
+                    Password <span className="text-error-500">*</span>
                   </Label>
                   <div className="relative">
                     <Input
@@ -179,7 +182,6 @@ export default function SignUpForm() {
                       type={showPassword ? "text" : "password"}
                       value={formData.password}
                       onChange={handleChange}
-                      required
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -213,7 +215,7 @@ export default function SignUpForm() {
                   </p>
                 </div>
 
-                {/* Submit Button */}
+                {/* Submit */}
                 <div>
                   <button
                     type="submit"
@@ -231,7 +233,6 @@ export default function SignUpForm() {
               </div>
             </form>
 
-            {/* Already Have Account */}
             <div className="mt-5">
               <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
                 Already have an account?{" "}

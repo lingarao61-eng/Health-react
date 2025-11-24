@@ -1,22 +1,28 @@
 import { useState, useEffect } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 
-export default function UserDropdown() {
-  const [isOpen, setIsOpen] = useState(false);
+// ------------------------------
+// TYPES
+// ------------------------------
+interface UserInfo {
+  name: string;
+  email: string;
+}
 
-  // ---------------------------------------------------
-  // USER DATA FROM XANO
-  // ---------------------------------------------------
-  const [user, setUser] = useState({
+export default function UserDropdown() {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+
+  // USER DATA STATE
+  const [user, setUser] = useState<UserInfo>({
     name: "Loading...",
     email: "",
   });
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // ---------------------------------------------------
+  // ------------------------------
   // FETCH USER FROM XANO BACKEND
-  // ---------------------------------------------------
+  // ------------------------------
   useEffect(() => {
     const token = localStorage.getItem("authToken");
 
@@ -37,12 +43,12 @@ export default function UserDropdown() {
           }
         );
 
-        const data = await response.json();
+        const data: Partial<UserInfo> = await response.json();
 
-        if (data && data.name) {
+        if (data?.name) {
           setUser({
             name: data.name,
-            email: data.email,
+            email: data.email ?? "",
           });
         } else {
           setUser({ name: "Unknown User", email: "" });
@@ -58,37 +64,39 @@ export default function UserDropdown() {
     fetchUser();
   }, []);
 
-  // ---------------------------------------------------
-  // GET USER INITIALS
-  // ---------------------------------------------------
-  const getInitials = (name) => {
+  // ------------------------------
+  // INITIALS GENERATOR (TYPE SAFE)
+  // ------------------------------
+  const getInitials = (name: string): string => {
     if (!name) return "U";
+
     const parts = name.trim().split(" ");
     if (parts.length === 1) return parts[0][0].toUpperCase();
+
     return (parts[0][0] + parts[1][0]).toUpperCase();
   };
 
   const initials = getInitials(user.name);
 
-  // ---------------------------------------------------
-  // TOGGLE DROPDOWN
-  // ---------------------------------------------------
-  function toggleDropdown() {
-    setIsOpen(!isOpen);
-  }
+  // ------------------------------
+  // DROPDOWN TOGGLE
+  // ------------------------------
+  const toggleDropdown = (): void => {
+    setIsOpen((prev) => !prev);
+  };
 
-  function closeDropdown() {
+  const closeDropdown = (): void => {
     setIsOpen(false);
-  }
+  };
 
-  // ---------------------------------------------------
-  // LOGOUT
-  // ---------------------------------------------------
-  function handleLogout() {
+  // ------------------------------
+  // LOGOUT FUNCTION
+  // ------------------------------
+  const handleLogout = (): void => {
     localStorage.removeItem("authToken");
     localStorage.removeItem("user_id");
     window.location.href = "/signin";
-  }
+  };
 
   return (
     <div className="relative">
@@ -97,17 +105,17 @@ export default function UserDropdown() {
         onClick={toggleDropdown}
         className="flex items-center text-gray-700 dropdown-toggle dark:text-gray-400"
       >
-        {/* INITIALS AVATAR */}
+        {/* User Initials */}
         <span className="mr-3 overflow-hidden rounded-full h-11 w-11 flex items-center justify-center bg-brand-500 text-white font-semibold text-lg">
           {loading ? "…" : initials}
         </span>
 
-        {/* NAME */}
+        {/* User Name */}
         <span className="block mr-1 font-medium text-theme-sm">
           {loading ? "Loading..." : user.name}
         </span>
 
-        {/* DROPDOWN ARROW */}
+        {/* Dropdown Icon */}
         <svg
           className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
@@ -128,7 +136,7 @@ export default function UserDropdown() {
         </svg>
       </button>
 
-      {/* DROPDOWN MENU */}
+      {/* DROPDOWN */}
       <Dropdown
         isOpen={isOpen}
         onClose={closeDropdown}
@@ -144,7 +152,6 @@ export default function UserDropdown() {
           </span>
         </div>
 
-        {/* EMPTY LIST (REMOVED SETTINGS + SUPPORT) */}
         <ul className="flex flex-col gap-1 pt-4 pb-3 border-b border-gray-200 dark:border-gray-800"></ul>
 
         {/* LOGOUT BUTTON */}
@@ -160,7 +167,6 @@ export default function UserDropdown() {
             height="24"
             viewBox="0 0 24 24"
             fill="none"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <path
               fillRule="evenodd"

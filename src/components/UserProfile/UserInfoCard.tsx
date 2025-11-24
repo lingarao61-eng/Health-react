@@ -5,40 +5,47 @@ import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
 
+// ------------------------------
+// TYPES
+// ------------------------------
+interface UserInfo {
+  name: string;
+  email: string;
+}
+
 export default function UserInfoCard() {
   const { isOpen, openModal, closeModal } = useModal();
 
-  // --------------------------------------------
-  // USER DATA (BASED ON /auth/me RESPONSE)
-  // --------------------------------------------
-  const [user, setUser] = useState({
+  // USER STATE (STRONGLY TYPED)
+  const [user, setUser] = useState<UserInfo>({
     name: "",
     email: "",
   });
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // --------------------------------------------
+  // ------------------------------
   // FETCH USER FROM XANO
-  // --------------------------------------------
+  // ------------------------------
   useEffect(() => {
     const token = localStorage.getItem("authToken");
-    if (!token) return setLoading(false);
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
     async function loadUser() {
       try {
         const res = await fetch(
           "https://x8ki-letl-twmt.n7.xano.io/api:7sOVqxPz/auth/me",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        const data = await res.json();
+        const data: Partial<UserInfo> = await res.json();
 
         setUser({
-          name: data.name || "",
-          email: data.email || "",
+          name: data.name ?? "",
+          email: data.email ?? "",
         });
       } catch (error) {
         console.error("Failed to load user:", error);
@@ -50,35 +57,38 @@ export default function UserInfoCard() {
     loadUser();
   }, []);
 
-  // --------------------------------------------
-  // INITIALS
-  // --------------------------------------------
-  const getInitials = () => {
-    if (!user.name) return "U";
+  // ------------------------------
+  // GET USER INITIALS (TYPE SAFE)
+  // ------------------------------
+  const getInitials = (fullName: string): string => {
+    if (!fullName) return "U";
 
-    const parts = user.name.trim().split(" ");
-
+    const parts = fullName.trim().split(" ");
     if (parts.length === 1) return parts[0][0].toUpperCase();
 
     return (parts[0][0] + parts[1][0]).toUpperCase();
   };
 
-  const initials = getInitials();
+  const initials = getInitials(user.name);
 
-  // --------------------------------------------
-  // MODAL FORM HANDLING
-  // --------------------------------------------
-  const [formData, setFormData] = useState({ ...user });
+  // ------------------------------
+  // EDIT FORM STATE
+  // ------------------------------
+  const [formData, setFormData] = useState<UserInfo>(user);
 
   useEffect(() => {
-    setFormData({ ...user });
+    setFormData(user);
   }, [user]);
 
-  const handleChange = (e) =>
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ): void => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-  const handleSave = async () => {
+  const handleSave = async (): Promise<void> => {
     const token = localStorage.getItem("authToken");
+    if (!token) return;
 
     try {
       await fetch(
@@ -89,7 +99,7 @@ export default function UserInfoCard() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(formData), // { name, email }
+          body: JSON.stringify(formData),
         }
       );
 
@@ -100,13 +110,17 @@ export default function UserInfoCard() {
     }
   };
 
-  if (loading) return <p className="p-5 text-gray-500">Loading...</p>;
+  // ------------------------------
+  // UI
+  // ------------------------------
+  if (loading)
+    return <p className="p-5 text-gray-500 dark:text-gray-400">Loading...</p>;
 
   return (
     <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         
-        {/* LEFT SECTION – USER INFO */}
+        {/* USER INFORMATION */}
         <div>
           <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">
             Personal Information
@@ -114,7 +128,6 @@ export default function UserInfoCard() {
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-7">
             
-            {/* Name */}
             <div>
               <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
                 Full Name
@@ -124,7 +137,6 @@ export default function UserInfoCard() {
               </p>
             </div>
 
-            {/* Email */}
             <div>
               <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
                 Email
@@ -133,10 +145,11 @@ export default function UserInfoCard() {
                 {user.email}
               </p>
             </div>
+
           </div>
         </div>
 
-        {/* EDIT BUTTON + INITIAL ICON */}
+        {/* EDIT BUTTON */}
         <button
           onClick={openModal}
           className="flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-5 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 lg:w-auto"
@@ -151,7 +164,7 @@ export default function UserInfoCard() {
       {/* EDIT MODAL */}
       <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[700px] m-4">
         <div className="relative w-full max-w-[700px] rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
-          
+
           <h4 className="mb-4 text-2xl font-semibold text-gray-800 dark:text-white/90">
             Edit Personal Information
           </h4>
@@ -165,7 +178,6 @@ export default function UserInfoCard() {
 
               <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
 
-                {/* Name */}
                 <div className="col-span-2">
                   <Label>Full Name</Label>
                   <Input
@@ -176,7 +188,6 @@ export default function UserInfoCard() {
                   />
                 </div>
 
-                {/* Email */}
                 <div className="col-span-2">
                   <Label>Email</Label>
                   <Input
@@ -197,6 +208,7 @@ export default function UserInfoCard() {
                 Save Changes
               </Button>
             </div>
+
           </form>
         </div>
       </Modal>

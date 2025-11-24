@@ -5,26 +5,42 @@ import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
 
+// ------------------------------
+// TYPES
+// ------------------------------
+interface UserData {
+  name: string;
+  email: string;
+}
+
+interface FormData {
+  name: string;
+  email: string;
+}
+
 export default function UserMetaCard() {
   const { isOpen, openModal, closeModal } = useModal();
 
-  // --------------------------------------------
-  // USER DATA (MATCHES XANO)
-  // --------------------------------------------
-  const [user, setUser] = useState({
+  // ------------------------------
+  // USER STATE
+  // ------------------------------
+  const [user, setUser] = useState<UserData>({
     name: "",
     email: "",
   });
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // --------------------------------------------
+  // ------------------------------
   // LOAD USER FROM XANO /auth/me
-  // --------------------------------------------
+  // ------------------------------
   useEffect(() => {
     async function loadUser() {
       const token = localStorage.getItem("authToken");
-      if (!token) return setLoading(false);
+      if (!token) {
+        setLoading(false);
+        return;
+      }
 
       try {
         const res = await fetch(
@@ -37,8 +53,8 @@ export default function UserMetaCard() {
         const data = await res.json();
 
         setUser({
-          name: data.name || "",
-          email: data.email || "",
+          name: data?.name || "",
+          email: data?.email || "",
         });
       } catch (err) {
         console.error("Failed to fetch user:", err);
@@ -50,10 +66,10 @@ export default function UserMetaCard() {
     loadUser();
   }, []);
 
-  // --------------------------------------------
+  // ------------------------------
   // GET INITIALS
-  // --------------------------------------------
-  const getInitials = () => {
+  // ------------------------------
+  const getInitials = (): string => {
     if (!user.name) return "U";
     const parts = user.name.trim().split(" ");
 
@@ -64,20 +80,38 @@ export default function UserMetaCard() {
 
   const initials = getInitials();
 
-  // --------------------------------------------
+  // ------------------------------
   // FORM STATE
-  // --------------------------------------------
-  const [formData, setFormData] = useState({ ...user });
+  // ------------------------------
+  const [formData, setFormData] = useState<FormData>({
+    name: "",
+    email: "",
+  });
 
   useEffect(() => {
     setFormData({ ...user });
   }, [user]);
 
-  const handleChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  // ------------------------------
+  // INPUT HANDLER (TYPE-SAFE)
+  // ------------------------------
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ): void => {
+    const { name, value } = e.target;
 
-  const handleSave = async () => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // ------------------------------
+  // SAVE PROFILE → XANO
+  // ------------------------------
+  const handleSave = async (): Promise<void> => {
     const token = localStorage.getItem("authToken");
+    if (!token) return;
 
     try {
       await fetch(
@@ -88,7 +122,7 @@ export default function UserMetaCard() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(formData), // { name, email }
+          body: JSON.stringify(formData),
         }
       );
 
@@ -99,15 +133,22 @@ export default function UserMetaCard() {
     }
   };
 
+  // ------------------------------
+  // RENDER
+  // ------------------------------
   if (loading)
-    return <p className="p-5 text-gray-500 dark:text-gray-400">Loading...</p>;
+    return (
+      <p className="p-5 text-gray-500 dark:text-gray-400">
+        Loading...
+      </p>
+    );
 
   return (
     <>
       <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
 
-          {/* AVATAR + USER INFO */}
+          {/* AVATAR */}
           <div className="flex flex-col items-center w-full gap-6 xl:flex-row">
             <div className="w-20 h-20 flex items-center justify-center rounded-full bg-brand-500 text-white text-2xl font-semibold">
               {initials}
@@ -145,12 +186,16 @@ export default function UserMetaCard() {
             </svg>
             Edit
           </button>
+
         </div>
       </div>
 
-      {/* EDIT MODAL */}
+      {/* ------------------------------
+          EDIT MODAL
+      ------------------------------ */}
       <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[700px] m-4">
         <div className="relative w-full max-w-[700px] rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
+
           <div className="px-2 pr-14">
             <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
               Edit Personal Information
@@ -159,7 +204,6 @@ export default function UserMetaCard() {
 
           <form className="flex flex-col">
             <div className="custom-scrollbar h-[350px] overflow-y-auto px-2 pb-3">
-
               <h5 className="mb-5 text-lg font-medium text-gray-800 dark:text-white/90">
                 User Details
               </h5>
@@ -197,6 +241,7 @@ export default function UserMetaCard() {
                 Save Changes
               </Button>
             </div>
+
           </form>
         </div>
       </Modal>

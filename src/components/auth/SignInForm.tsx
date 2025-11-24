@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
+import { EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
@@ -13,40 +13,52 @@ export default function SignInForm() {
   // ------------------------------
   // FORM STATES
   // ------------------------------
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    email: string;
+    password: string;
+  }>({
     email: "",
     password: "",
   });
 
-  const [resetForm, setResetForm] = useState({
+  const [resetForm, setResetForm] = useState<{
+    password: string;
+    confirm_password: string;
+  }>({
     password: "",
     confirm_password: "",
   });
 
-  const [message, setMessage] = useState("");
-  const [resetMode, setResetMode] = useState(false); // toggles reset password UI
+  const [message, setMessage] = useState<string>("");
+  const [resetMode, setResetMode] = useState<boolean>(false);
 
   // ------------------------------
   // HANDLE INPUT CHANGE
   // ------------------------------
-  const handleChange = (e) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ): void => {
+    const { name, value } = e.target;
+
     if (resetMode) {
-      setResetForm({
-        ...resetForm,
-        [e.target.name]: e.target.value,
-      });
+      setResetForm((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
     } else {
-      setFormData({
-        ...formData,
-        [e.target.name]: e.target.value,
-      });
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
     }
   };
 
   // ======================================================
   // 🔑 LOGIN → XANO
   // ======================================================
-  const handleLogin = async (e) => {
+  const handleLogin = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
     e.preventDefault();
     setMessage("Signing in...");
 
@@ -65,7 +77,7 @@ export default function SignInForm() {
 
       if (data.authToken) {
         localStorage.setItem("authToken", data.authToken);
-        localStorage.setItem("user_id", data.user_id);
+        localStorage.setItem("user_id", String(data.user_id));
 
         setMessage("Login successful! Redirecting...");
         setTimeout(() => {
@@ -81,9 +93,11 @@ export default function SignInForm() {
   };
 
   // ======================================================
-  // 🔐 UPDATE PASSWORD → XANO (/reset/update_password)
+  // 🔐 UPDATE PASSWORD → XANO
   // ======================================================
-  const handlePasswordReset = async (e) => {
+  const handlePasswordReset = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
     e.preventDefault();
     setMessage("Updating password...");
 
@@ -127,9 +141,7 @@ export default function SignInForm() {
   // ======================================================
   return (
     <div className="flex flex-col flex-1">
-      <div className="w-full max-w-md pt-10 mx-auto">
-       
-      </div>
+      <div className="w-full max-w-md pt-10 mx-auto"></div>
 
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
@@ -144,48 +156,23 @@ export default function SignInForm() {
             </p>
           </div>
 
-          {!resetMode && (
-            <>
-              {/* Google + X Buttons */}
-             
-
-              <div className="relative py-3 sm:py-5">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* =========================== */}
-          {/* SIGN IN FORM */}
-          {/* =========================== */}
+          {/* SIGN IN */}
           {!resetMode ? (
             <form onSubmit={handleLogin}>
               <div className="space-y-6">
-                {/* Email */}
                 <div>
-                  <Label>
-                    Email <span className="text-error-500">*</span>
-                  </Label>
+                  <Label>Email *</Label>
                   <Input
                     placeholder="info@gmail.com"
                     name="email"
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
-                    required
                   />
                 </div>
 
-                {/* Password */}
                 <div>
-                  <Label>
-                    Password <span className="text-error-500">*</span>
-                  </Label>
+                  <Label>Password *</Label>
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
@@ -193,7 +180,6 @@ export default function SignInForm() {
                       placeholder="Enter your password"
                       value={formData.password}
                       onChange={handleChange}
-                      required
                     />
 
                     <span
@@ -209,7 +195,6 @@ export default function SignInForm() {
                   </div>
                 </div>
 
-                {/* Keep me logged in */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Checkbox checked={isChecked} onChange={setIsChecked} />
@@ -227,7 +212,7 @@ export default function SignInForm() {
                 </div>
 
                 <div>
-                  <Button className="w-full" size="sm" type="submit">
+                  <Button className="w-full" size="sm">
                     Sign in
                   </Button>
                 </div>
@@ -240,12 +225,9 @@ export default function SignInForm() {
               </div>
             </form>
           ) : (
-            // ===========================
             // RESET PASSWORD FORM
-            // ===========================
             <form onSubmit={handlePasswordReset}>
               <div className="space-y-6">
-                {/* New Password */}
                 <div>
                   <Label>New Password</Label>
                   <Input
@@ -254,11 +236,9 @@ export default function SignInForm() {
                     placeholder="Enter new password"
                     value={resetForm.password}
                     onChange={handleChange}
-                    required
                   />
                 </div>
 
-                {/* Confirm Password */}
                 <div>
                   <Label>Confirm Password</Label>
                   <Input
@@ -267,11 +247,10 @@ export default function SignInForm() {
                     placeholder="Confirm new password"
                     value={resetForm.confirm_password}
                     onChange={handleChange}
-                    required
                   />
                 </div>
 
-                <Button className="w-full" size="sm" type="submit">
+                <Button className="w-full" size="sm">
                   Update Password
                 </Button>
 
@@ -291,7 +270,7 @@ export default function SignInForm() {
             </form>
           )}
 
-          {/* SIGNUP LINK */}
+          {/* SIGN UP LINK */}
           {!resetMode && (
             <div className="mt-5">
               <p className="text-sm text-center text-gray-700 dark:text-gray-400">
