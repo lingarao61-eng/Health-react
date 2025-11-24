@@ -80,8 +80,9 @@ export default function SignInForm() {
         localStorage.setItem("user_id", String(data.user_id));
 
         setMessage("Login successful! Redirecting...");
+
         setTimeout(() => {
-          window.location.href = "/";
+          window.location.href = "/home";  // ⭐ FIXED REDIRECT
         }, 1200);
       } else {
         setMessage(data.message || "Invalid credentials");
